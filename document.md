@@ -1,7 +1,18 @@
+## Prerequisites
+## Technologies Used
+   1. Docker
+   2. Docker-compose
+   3. Nginx
+   4. Supervisor
+
+Please ensure that these tools above are installed.
+
 ## 1. Production Readiness
 
 ### Implement a production webserver
-1. Set up a virtual machine on any cloud environment. For this I used an ec2 instance on AWS
+## Steps to reproduce
+
+1. Set up a virtual machine on any cloud environment. For this I used an  Ubuntu 22.04 LTS instance using AWS.
 2. Terraform was used to provision the instance
 3. cd into terraform directory
  run the following commands:
@@ -72,4 +83,4 @@ description "supervisor"
 sudo service supervisord stop
 sudo service supervisord start
 
-Containerize the application
+## Containerize the application
