@@ -58,3 +58,6 @@ Session.vim
 .DS_Store
 .vscode/settings.json
 celery.logs
+
+# terraform 
+*/.terraform
