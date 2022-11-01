@@ -1,0 +1,34 @@
+# GitHub Action to copy files to a remote server via SSH and run a command
+
+name: Deploy
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Copy files to remote server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          source: "./minikube"
+          target: "/tmp"
+          
+      - name: Run command on remote server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          script: |
+            kubectl apply -f /tmp/minikube/celery
+            kubectl apply -f /tmp/minikube/django
+            kubectl apply -f /tmp/minikube/postgres
+            kubectl apply -f /tmp/minikube/redis
