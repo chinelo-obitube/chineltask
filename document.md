@@ -4,6 +4,7 @@
    2. Docker-compose
    3. Nginx
    4. Supervisor
+   5. Helm
 
 Please ensure that these tools above are installed.
 
@@ -13,35 +14,63 @@ Please ensure that these tools above are installed.
 ## Steps to reproduce
 
 1. Set up a virtual machine on any cloud environment. For this I used an  Ubuntu 22.04 LTS instance using AWS.
-2. Terraform was used to provision the instance
+2. Terraform was used to provision the EC2 instance with the script `start.sh` for installing the tools required including the database.
 3. cd into terraform directory
- run the following commands:
+4. run the following commands:
  ```
  terraform init
  terraform plan
  terraform validate
  terraform apply
  ```
-Once the server is up and running, ssh into the instance.
-sudo chmod +x start.sh
-Run the script to get the application working.
+5. You can ssh into the server to validate that the server is running and the folders and files are inside.
+   Once the server is up and running, ssh into the instance.
+``` sudo chmod +x start.sh ```
+ Run the script to get the application working.
 
 
-### Implementing a reverse proxy to serve traffic.
+### Implementing a Reverse proxy to Serve traffic.
 
-1. sudo nano /etc/nginx/sites-enabled/nginx.conf to create an nginx conf file for the reverse-proxy.
+1. Create an nginx conf file for the reverse-proxy.
+```sudo nano /etc/nginx/sites-enabled/nginx.conf ```.
+2. Copy and paste this into the nginx.conf file.
+```
+upstream backend {
+    server localhost:8000;
+}
+server_tokens               off;
+access_log                  /var/log/nginx/devops_challenge_app.access.log;
+error_log                   /var/log/nginx/devops_challenge_app.error.log;
 
-For the database, creation of the database and user in alresdy in the script.
+server {
+  server_name               _;
+  listen                    80;
+  listen [::]:80;
+
+  location / {
+    proxy_pass              http://localhost:8000;
+
+   proxy_set_header        Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+```
+3. Restart the nginx service.
+   ``` sudo systemctl nginx restart ```.
+
+## Connect database to the application.
+Note: Database is already created in the start.sh script.
 
 To enable it in the application,
-1. cd into cd devops_challenge/devops_challenge_app/django_celery/
-2. edit the settings.py file
-3. set debug =False
-4. Also set ALLOWED_HOSTS = ['54.156.187.143', 'localhost']
-    ALLOWED_HOSTS = ['instance-IP', 'localhost']
-
-REMOVE the  default sqlite database and add the postgres db
-DATABASES = {
+1. Cd into devops_~/django_celery/
+2. Edit the settings.py file
+3. Set debug =False
+4. Set ALLOWED_HOSTS = ['54.156.187.143', 'localhost']
+       ALLOWED_HOSTS = ['instance-IP', 'localhost']
+5. Remove the  default sqlite database and add the postgres db
+   ```
+   DATABASES = {
     "default": {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'django',
@@ -51,28 +80,33 @@ DATABASES = {
         'PORT': '',
                 }
 }
-run a migration
-python manage.py makemigrations
-python manage.py migrate
+```
+### Managed services to handle automatic start/restarts of processes.
 
-To automate the processes, install the supervisor
-1. pip install supervisor in the venv
-2. echo_supervisord_conf > supervisord.conf
-3. create a config file celery.conf
+To automate the processes, install supervisor
+1. pip install supervisor in the venv.
+2. echo_supervisord_conf > supervisord.conf.
+3. create a config file celery.conf and add the bellow.
+```
+[program:celeryd]
+    command=python -m celery -A django_celery worker
+    stdout_logfile=/home/ubuntu/var/logs/celeryd.log
+    stderr_logfile=/home/ubuntu/var/logs/celeryd.log
+    autostart=true
+    autorestart=true
+    startsecs=10
+    stopwaitsecs=600
+```
 
-4. run supervisord in the project directory
-
-5. create a file /etc/init.d/supervisord and configure your actual supervisord.conf in which celery is configured in DAEMON_ARGS as follows
-`DAEMON_ARGS="-c  "home/ubuntu/challenge-engie/devops_challenge_app/supervisord.conf"`
-
-6. sudo chmod +x /etc/init.d/supervisord
-7. sudo update-rc.d supervisord defaults to automatically schedule it
-8. sudo service supervisord stop
-9. sudo service supervisord start
-
-Running supervisor during startup or booting time using upstart(For Ubuntu users)
-/etc/init/supervisor.conf.
-
+4.  Run ``` supervisord ``` inside the project directory.
+5. Create a file ```/etc/init.d/supervisord``` and configure your actual supervisord.conf in which celery is configured in DAEMON_ARGS as follows
+```DAEMON_ARGS="-c  home/ubuntu/devops-challenge/devops_challenge_app/supervisord.conf"
+   sudo chmod +x /etc/init.d/supervisord
+   sudo update-rc.d supervisord defaults 
+   sudo service supervisord stop
+   sudo service supervisord start
+```
+6. To run supervisor during startup or booting time using upstart(For Ubuntu users), create a ```/etc/init/supervisor.conf. ``` file and add the following.
 ```
 description "supervisor"
     start on runlevel [2345]
@@ -80,8 +114,71 @@ description "supervisor"
     respawn
     chdir /path/to/supervisord
 ```
-
-sudo service supervisord stop
-sudo service supervisord start
+7. Complete the setup
+``` sudo service supervisord stop
+    sudo service supervisord start
+```
 
 ## Containerize the application
+1. Create a DockerFile inside the devops_challenge_app folder.
+2. Create a docker-compose file.
+3. Execute the command.
+``` docker-compose up --build ```
+4. Check that the docker containers are up and running.
+5. Go to http://localhost:8000 to access the application.
+
+
+### Kubernetes with minikube
+I decided to set up the minikube in a virtual machine to ease the ci/cd process.
+1. Start the minikube on your machine.
+``` minikube start ```
+2. enable addons
+``` minikube addons enable heapster; minikube addons enable ingress ```
+3. confirm minikube is working
+  ``` kubectl get pods ```
+4. cd into the minikube folder
+5. Apply the manifests and ensure pods are working.
+6. Set the type as LoadBalancer for the deveops-challenge-web-service.
+7. Scale the deployment to your desired number
+``` kubectl scale --replicas=4 deployment devops-challenge-web
+    kubectl scale --replicas=4 deployment devops-challenge-celery
+```
+8. To monitor the application, add and install prometheus and grafana using helm.
+9. Execute the bellow commands to set up prometehus
+```
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm install prometheus prometheus-community/prometheus
+export POD_NAME=$(kubectl get pods --namespace default -l "app=prometheus,component=server" -o jsonpath="{.items[0].metadata.name}")
+kubectl --namespace default port-forward $POD_NAME 9090
+kubectl expose service prometheus-server –type=NodePort –target-port=9090 –name=prometheus-server-np
+minikube service prometheus-server-np
+```
+10. To set up Grafana,
+    ```
+    https://github.com/grafana/helm-charts
+    helm repo add grafana https://grafana.github.io/helm-charts
+    helm install grafana grafana/grafana
+    kubectl get secret --namespace default grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+    export POD_NAME=$(kubectl get pods --namespace default -l "app.kubernetes.io/name=grafana,app.kubernetes.io/instance=grafana" -o jsonpath="{.items[0].metadata.name}")
+     kubectl --namespace default port-forward $POD_NAME 3000
+     ```
+    or 
+    ```
+    helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install [RELEASE_NAME] prometheus-community/kube-prometheus-stack
+```
+minikube service grafana-np
+kubectl –namespace default port-forward <POD NAME> 3000
+Log in to grafana and complete the set up
+
+CI/CD   WOTH GITHUB actions
+Ideally, set up the minikube in a virtual machine and set up the workflow for the ci/cd
+
+
+
+
+
+   
+
+

@@ -11,7 +11,7 @@ module "ec2-instance" {
   subnet_id                   = element(module.vpc.public_subnets, 0)
   vpc_security_group_ids      = [module.sg.security_group_id]
   associate_public_ip_address = true
-  user_data_base64            = base64encode(local.user_data)
+  # user_data_base64            = base64encode(local.user_data)
 
   hibernation = true
 
@@ -37,9 +37,20 @@ module "ec2-instance" {
       encrypted   = true
     }
   ]
-
- 
 }
 
+resource "null_resource" "copy" {
+  depends_on = [module.ec2-instance.aws_instance]
 
+  connection {
+    type        = "ssh"
+    user        = "ubuntu"
+    private_key = file("~/.ssh/id_rsa")
+    host        = module.ec2-instance.public_ip
+  }
 
+  provisioner "file" {
+    source      = "files/"
+    destination = "/home/ubuntu/"
+  }
+}

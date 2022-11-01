@@ -58,3 +58,5 @@ Session.vim
 .DS_Store
 .vscode/settings.json
 celery.logs
+devops_challenge/terraform /.terraform
+devops_challenge/terraform /.terraform.lock.hcl
