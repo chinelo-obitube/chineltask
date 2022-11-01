@@ -11,6 +11,7 @@ module "ec2-instance" {
   subnet_id                   = element(module.vpc.public_subnets, 0)
   vpc_security_group_ids      = [module.sg.security_group_id]
   associate_public_ip_address = true
+  user_data_base64            = base64encode(local.user_data)
 
   hibernation = true
 
