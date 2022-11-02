@@ -15,8 +15,9 @@ spec:
         pod: redis
     spec:
       containers:
-      - name: master
+      - name: redis
         image: redis
+        imagePullPolicy: Always
         resources:
           requests:
             cpu: 100m

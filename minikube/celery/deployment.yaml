@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: celery-worker
+  name: devops-challenge-celery
   labels:
-    deployment: celery-worker
+    deployment: devops-challenge-celery
 spec:
   replicas: 1
   selector:
     matchLabels:
-      pod: celery-worker
+      pod: devops-challenge-celery
   template:
     metadata:
       labels:
-        pod: celery-worker
+        pod: devops-challenge-celery
     spec:
       containers:
-        - name: celery-worker
+        - name: devops-challenge-celery
           image: culnellie/devops_challenge_celery:1.0
           command: ["python", "-m", "celery", "-A", "django_celery", "worker"]
           env:

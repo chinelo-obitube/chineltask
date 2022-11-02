@@ -5,6 +5,10 @@
    3. Nginx
    4. Supervisor
    5. Helm
+   6. Kubectl
+   7. Minikube
+   8. Hyperkit
+   9. Kubernetes
 
 Please ensure that these tools above are installed.
 
@@ -130,16 +134,23 @@ description "supervisor"
 
 ### Kubernetes with minikube
 I decided to set up the minikube in a virtual machine to ease the ci/cd process.
-1. Start the minikube on your machine.
-``` minikube start ```
-2. enable addons
-``` minikube addons enable heapster; minikube addons enable ingress ```
-3. confirm minikube is working
+
+1. Start the minikube on your machine and ensure docker is up and running.
+``` 
+minikube start 
+eval $(minikube docker-env)     
+``` 
+2. Enable addons
+``` minikube addons enable ingress ```
+3. Confirm minikube is working
   ``` kubectl get pods ```
+4. Run ```minikube dashboard ```  and open in a browser.
 4. cd into the minikube folder
 5. Apply the manifests and ensure pods are working.
-6. Set the type as LoadBalancer for the deveops-challenge-web-service.
-7. Scale the deployment to your desired number
+6. Set the type as LoadBalancer for the deveops-challenge-web-service and view on the browser.
+kubectl expose deployment devops-challenge-web-service --type=LoadBalancer --port=8000
+   ```minikube service devops-challenge-web-service ```
+7. Scale the deployment to your desired number.
 ``` kubectl scale --replicas=4 deployment devops-challenge-web
     kubectl scale --replicas=4 deployment devops-challenge-celery
 ```
