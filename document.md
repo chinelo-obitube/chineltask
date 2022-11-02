@@ -31,6 +31,7 @@ Please ensure that these tools above are installed.
    Once the server is up and running, ssh into the instance.
 ``` sudo chmod +x start.sh ```
  Run the script to get the application working.
+ ``` bash start.sh  ```
 
 
 ### Implementing a Reverse proxy to Serve traffic.
@@ -47,7 +48,7 @@ access_log                  /var/log/nginx/devops_challenge_app.access.log;
 error_log                   /var/log/nginx/devops_challenge_app.error.log;
 
 server {
-  server_name               _;
+  server_name               54.156.187.143;
   listen                    80;
   listen [::]:80;
 
@@ -126,10 +127,15 @@ description "supervisor"
 ## Containerize the application
 1. Create a DockerFile inside the devops_challenge_app folder.
 2. Create a docker-compose file.
-3. Execute the command.
+3.  Edit the django_celery/settings.py and change the localhost to redis.
+```CELERY_BROKER_URL = "redis://redis:6379"
+   CELERY_RESULT_BACKEND = "redis://redis:6379"
+```
+   Also set debug to False since its prodcution.
+4. Execute the command.
 ``` docker-compose up --build ```
-4. Check that the docker containers are up and running.
-5. Go to http://localhost:8000 to access the application.
+5. Check that the docker containers are up and running.
+6. Go to http://localhost:8000 to access the application.
 
 
 ### Kubernetes with minikube
@@ -147,44 +153,25 @@ eval $(minikube docker-env)
 4. Run ```minikube dashboard ```  and open in a browser.
 4. cd into the minikube folder
 5. Apply the manifests and ensure pods are working.
-6. Set the type as LoadBalancer for the deveops-challenge-web-service and view on the browser.
-kubectl expose deployment devops-challenge-web-service --type=LoadBalancer --port=8000
-   ```minikube service devops-challenge-web-service ```
-7. Scale the deployment to your desired number.
+6. Expose the deployment, set the type=LoadBalancer and sstart it on the browser.
+    ```kubectl expose deployment devops-challenge-web --type=LoadBalancer --port=8000 
+       minikube service devops-challenge-web-service ```
+7. confirm the application is running at http://127.0.0.1:55292/
+8. Scale the deployment to your desired number for high avaialability.
 ``` kubectl scale --replicas=4 deployment devops-challenge-web
     kubectl scale --replicas=4 deployment devops-challenge-celery
 ```
-8. To monitor the application, add and install prometheus and grafana using helm.
-9. Execute the bellow commands to set up prometehus
+9. To monitor the application, add and install prometheus and grafana using helm.
+10. Execute the bellow commands to set up prometehus and grafana with kube-prometheus-stack
 ```
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm install prometheus prometheus-community/prometheus
-export POD_NAME=$(kubectl get pods --namespace default -l "app=prometheus,component=server" -o jsonpath="{.items[0].metadata.name}")
-kubectl --namespace default port-forward $POD_NAME 9090
-kubectl expose service prometheus-server –type=NodePort –target-port=9090 –name=prometheus-server-np
-minikube service prometheus-server-np
-```
-10. To set up Grafana,
-    ```
-    https://github.com/grafana/helm-charts
-    helm repo add grafana https://grafana.github.io/helm-charts
-    helm install grafana grafana/grafana
-    kubectl get secret --namespace default grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
-    export POD_NAME=$(kubectl get pods --namespace default -l "app.kubernetes.io/name=grafana,app.kubernetes.io/instance=grafana" -o jsonpath="{.items[0].metadata.name}")
-     kubectl --namespace default port-forward $POD_NAME 3000
-     ```
-    or 
-    ```
-    helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
-helm install [RELEASE_NAME] prometheus-community/kube-prometheus-stack
+helm install prometheus-grafana prometheus-community/kube-prometheus-stack
 ```
-minikube service grafana-np
-kubectl –namespace default port-forward <POD NAME> 3000
-Log in to grafana and complete the set up
+To configure the ci/cd, a good way is to set up the minikube in a virtual machine and set up the workflow for the ci/cd using github actions.
 
-CI/CD   WOTH GITHUB actions
-Ideally, set up the minikube in a virtual machine and set up the workflow for the ci/cd
+Install kubectl, minikube, docker inside the instance
+and make a change to trigger the pipeline. 
 
 
 

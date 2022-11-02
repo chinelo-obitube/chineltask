@@ -17,7 +17,6 @@ spec:
       containers:
       - name: redis
         image: redis
-        imagePullPolicy: Always
         resources:
           requests:
             cpu: 100m
