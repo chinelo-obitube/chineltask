@@ -85,7 +85,13 @@ To enable it in the application,
                 }
 }
 ```
-### Managed services to handle automatic start/restarts of processes.
+6. Edit the django_celery/settings.py and change the localhost to redis.
+```CELERY_BROKER_URL = "redis://localhost:6379"
+   CELERY_RESULT_BACKEND = "redis://localhost:6379"
+
+7. Confirm the application is running on the server.
+
+## Managed services to handle automatic start/restarts of processes.
 
 To automate the processes, install supervisor
 1. pip install supervisor in the venv.
@@ -169,7 +175,7 @@ helm install prometheus-grafana prometheus-community/kube-prometheus-stack
 ```
 To configure the ci/cd, a good way is to set up the minikube in a virtual machine and set up the workflow for the ci/cd using github actions.
 
-Install kubectl, minikube, docker inside the instance
+Install kubectl, minikube, docker inside the instance.
 and make a change to trigger the pipeline. 
 
 
