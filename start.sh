@@ -24,7 +24,7 @@ echo "Postgres User djangouser and database django created."
 EOF
 
 git clone https://github.com/chinelo-obitube/chineltask.git
-cd devops_challenge/devops_challenge_app
+cd chineltask/devops_challenge/devops_challenge_app
 python3.8 -m venv venv
 source venv/bin/activate
     pip3 install -r requirements.txt
