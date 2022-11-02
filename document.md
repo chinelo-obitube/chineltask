@@ -18,7 +18,6 @@ Please ensure that these tools above are installed.
 ## Steps to reproduce
 
 1. Set up a virtual machine on any cloud environment. For this I used an  Ubuntu 22.04 LTS instance using AWS.
-2. Terraform was used to provision the EC2 instance with the script `start.sh` for installing the tools required including the database.
 3. cd into terraform directory
 4. run the following commands:
  ```
@@ -27,8 +26,8 @@ Please ensure that these tools above are installed.
  terraform validate
  terraform apply
  ```
-5. You can ssh into the server to validate that the server is running and the folders and files are inside.
-   Once the server is up and running, ssh into the instance.
+5. Ssh into the server to validate that the server is running 
+  Clone the repository and set up the environment using the script.
 ``` sudo chmod +x start.sh ```
  Run the script to get the application working.
  ``` bash start.sh  ```
@@ -71,7 +70,7 @@ To enable it in the application,
 1. Cd into devops_~/django_celery/
 2. Edit the settings.py file
 3. Set debug =False
-4. Set ALLOWED_HOSTS = ['54.156.187.143', 'localhost']
+4. Set ALLOWED_HOSTS = ['54.156.187.143', 'localhost'] or your instance
        ALLOWED_HOSTS = ['instance-IP', 'localhost']
 5. Remove the  default sqlite database and add the postgres db
    ```
